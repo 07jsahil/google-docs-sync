@@ -1,3 +1,4 @@
+/** @OnlyCurrentDoc */
 /**
  * ==============================================================================
  * 🚀 Zero-Touch Publishing Bridge: Google Docs to GitHub Actions (TEMPLATE)
@@ -6,13 +7,15 @@
  *
  * HOW TO INSTALL IN 3 STEPS:
  * 1. Open your Google Doc.
- * 2. In the top menu, go to: Extensions > Apps Script.
- * 3. Delete any default code, paste this entire file, customize the CONFIG
- *    block below, and click Save (💾).
- * 4. Refresh your Google Doc. You will see a new menu: "🚀 Website Admin".
+ * 2. Click Extensions > Apps Script.
+ * 3. Replace the code in Code.gs with this script.
+ * 4. Configure the variables in the CONFIG section below.
+ * 5. Create a GitHub Personal Access Token (classic) with "repo" scope, and save it in File > Project Settings > Script Properties as GITHUB_PAT.
+ * 6. You can run the sync manually, or set up a trigger (Triggers icon on the left) to run it automatically on edit or time-based.
+ * 7. Refresh your Google Doc. You will see a new menu: "🚀 Website Admin".
  * ==============================================================================
+ 
  */
-
 // --- ⚙️ USER CONFIGURATION ---
 const CONFIG = {
   // 1. Your GitHub username or organization name
@@ -59,13 +62,13 @@ function promptSetGitHubToken() {
   const ui = DocumentApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
   const existingToken = scriptProperties.getProperty('GITHUB_PAT');
-  
-  const statusMsg = existingToken 
+
+  const statusMsg = existingToken
     ? "A GitHub Token is currently configured (••••" + existingToken.slice(-4) + ").\nPaste a new token to update it, or leave blank to cancel:"
     : "Enter your GitHub Personal Access Token (classic with 'repo' scope):";
 
   const response = ui.prompt('GitHub Token Configuration', statusMsg, ui.ButtonSet.OK_CANCEL);
-  
+
   if (response.getSelectedButton() === ui.Button.OK) {
     const token = response.getResponseText().trim();
     if (token) {
@@ -81,7 +84,7 @@ function promptSetGitHubToken() {
 function syncAndBuildWebsite() {
   const ui = DocumentApp.getUi();
   const scriptProperties = PropertiesService.getScriptProperties();
-  
+
   // 1. Verify Configuration Placeholders
   if (CONFIG.GITHUB_OWNER === "YOUR_GITHUB_USERNAME" || CONFIG.GITHUB_REPO === "YOUR_REPOSITORY_NAME") {
     ui.alert(
@@ -117,7 +120,7 @@ function syncAndBuildWebsite() {
     // 3. Export active Google Doc as a .docx file using Google Drive REST API
     const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     const exportUrl = `https://www.googleapis.com/drive/v3/files/${docId}/export?mimeType=${encodeURIComponent(mimeType)}`;
-    
+
     const driveResponse = UrlFetchApp.fetch(exportUrl, {
       method: "GET",
       headers: {
@@ -231,4 +234,13 @@ function syncAndBuildWebsite() {
       ui.ButtonSet.OK
     );
   }
+}
+
+/**
+ * Helper to ensure Google Apps Script detects the Drive scope.
+ * With @OnlyCurrentDoc enabled, referencing DriveApp forces Apps Script to request
+ * the required Drive OAuth scope so the Google Drive v3 REST API export succeeds.
+ */
+function _driveScopeHelper() {
+  DriveApp.getFileById("");
 }
